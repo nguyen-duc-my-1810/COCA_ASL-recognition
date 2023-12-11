@@ -4,10 +4,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 from keras.models import load_model
-import spacy
-#tssste
-# Load spaCy model
-nlp = spacy.load("en_core_web_sm")
+
+
 model = load_model("D:\\Project AI\\new_model_test\\new_model_test.h5")
 
 cap = cv2.VideoCapture(0)
@@ -128,9 +126,11 @@ while True:
                     cv2.LINE_AA)
         # Hiển thị kết quả dự đoán ra màn hình
         print(f'Predicted Character: {predicted_character}')
+
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):  # Nhấn phím 'q' để thoát
         break
+
 
 cap.release()
 cv2.destroyAllWindows()
