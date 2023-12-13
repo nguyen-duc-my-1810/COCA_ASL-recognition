@@ -7,19 +7,23 @@ import Augmentation
 
 data_right_hand = pickle.load(open("D:\\[COCA]_ASL_recognition\Model\\new_data.pickle", 'rb'))
 data_right_hand = data_right_hand
+data_right_hand_for_test = data_right_hand
 
 data_left_hand = pickle.load(open("D:\\[COCA]_ASL_recognition\Model\\flip_data.pickle", 'rb'))
 data_left_hand = data_left_hand
+data_left_hand_for_test = data_left_hand
 
 label_counts = Counter(data_right_hand["labels"])
 sorted_labels = sorted(label_counts.items(), key=lambda x: x[0])
 print(sorted_labels)
+print()
 
 label_counts = Counter(data_left_hand["labels"])
 sorted_labels = sorted(label_counts.items(), key=lambda x: x[0])
 print(sorted_labels)
+print()
 
-def augmentation_implementation(data):
+def resampling_data(data):
     # ! Resampling dữ liệu lên
     for label in range(28):
         str_label = str(label)
@@ -95,6 +99,13 @@ def augmentation_implementation(data):
 
     label_counts = Counter(data["labels"])
     print(label_counts)
+
+    return data
+
+
+def augmentation_implementation(data):
+    
+    data = resampling_data(data)
 
     # ! Phép đổi góc nhìn, xoay 3D
     rotate_data = []
@@ -271,27 +282,226 @@ def augmentation_implementation(data):
     data['data'].extend(add_minor_data)
     data['labels'].extend(add_minor_labels)
 
+    return data
+
+right_hand_data = augmentation_implementation(data_right_hand)
+# right_hand_path = "D:\\[COCA]_ASL_recognition\\Model\\right_hand_data.pickle"  
+# with open(right_hand_path, 'wb') as file:
+#     pickle.dump(right_hand_data, file)
+
+left_hand_data = augmentation_implementation(data_left_hand)
+# left_hand_path = "D:\\[COCA]_ASL_recognition\\Model\\left_hand_data.pickle"  
+# with open(left_hand_path, 'wb') as file:
+#     pickle.dump(left_hand_data, file)
+
+print(len(right_hand_data['data']))
+label_counts = Counter(right_hand_data["labels"])
+sorted_labels = sorted(label_counts.items(), key=lambda x: x[0])
+print("right hand dataset:", sorted_labels)
+print()
+label_counts = Counter(left_hand_data["labels"])
+sorted_labels = sorted(label_counts.items(), key=lambda x: x[0])
+print("left hand dataset:", sorted_labels)
+print()
+
+# !_______________________________________________________
+def augmentation_implementation_create_testdata(data):
+    # ! Resampling dữ liệu lên để xử lý dễ dàng hơn
+    raw_data = []
+    raw_labels = []
+    for label in range(39):
+        str_label = str(label)
+        
+        filtered_indices = [idx for idx, lbl in enumerate(data['labels']) if lbl == str_label]
+        filtered_data = [data['data'][idx] for idx in filtered_indices]
+
+        data_rotate_number = 200
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))        
+        raw_data.extend(selected_samples)
+        raw_labels.extend([str_label] * len(selected_samples))
+
+    # ! Phép đổi góc nhìn, xoay 3D
+    rotate_data = []
+    rotate_labels = []
+
+    for label in range(39):
+        str_label = str(label)
+        
+        filtered_indices = [idx for idx, lbl in enumerate(data['labels']) if lbl == str_label]
+        filtered_data = [data['data'][idx] for idx in filtered_indices]
+
+        data_rotate_number = 200
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))
+        
+        data_rotate_final = []
+
+        for i in range(len(selected_samples)):
+            divided_samples = selected_samples[i]
+            angles = np.random.randint(5, 31)
+            data_rotate = Augmentation.change_camera_perspective(divided_samples, angles, 'x')
+            data_rotate_final.append(data_rotate)
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))
+        
+        for i in range(len(selected_samples)):
+            divided_samples = selected_samples[i]
+            angles = np.random.randint(-30, -4)
+            data_rotate = Augmentation.change_camera_perspective(divided_samples, angles, 'x')
+            data_rotate_final.append(data_rotate)
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))
+
+        for i in range(len(selected_samples)):
+            divided_samples = selected_samples[i]
+            angles = np.random.randint(5, 31)
+            data_rotate = Augmentation.change_camera_perspective(divided_samples, angles, 'y')
+            data_rotate_final.append(data_rotate)
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))
+
+        for i in range(len(selected_samples)):
+            divided_samples = selected_samples[i]
+            angles = np.random.randint(-30, -4)
+            data_rotate = Augmentation.change_camera_perspective(divided_samples, angles, 'y')
+            data_rotate_final.append(data_rotate)
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))
+    
+        for i in range(len(selected_samples)):
+            divided_samples = selected_samples[i]
+            angles = np.random.randint(5, 31)
+            data_rotate = Augmentation.change_camera_perspective(divided_samples, angles, 'z')
+            data_rotate_final.append(data_rotate)
+
+        selected_samples = random.sample(filtered_data, min(data_rotate_number, len(filtered_data)))
+
+        for i in range(len(selected_samples)):
+            divided_samples = selected_samples[i]
+            angles = np.random.randint(-30, -4)
+            data_rotate = Augmentation.change_camera_perspective(divided_samples, angles, 'z')
+            data_rotate_final.append(data_rotate)
+
+        rotate_data.extend(data_rotate_final)
+        rotate_labels.extend([str_label] * len(data_rotate_final))
+
+    # ! Chuyển
+    change_data = []
+    change_labels = []
+    for label in range(39):
+        str_label = str(label)
+        
+        filtered_indices = [idx for idx, lbl in enumerate(data['labels']) if lbl == str_label]
+        filtered_data = [data['data'][idx] for idx in filtered_indices]
+        # print(len(filtered_data))
+
+        data_change_ratio_number = 200
+
+        selected_change_samples = random.sample(filtered_data, min(data_change_ratio_number, len(filtered_data)))
+
+        data_change_ratio_final = []
+
+        for i in range(len(selected_change_samples)):
+            divided_samples = selected_change_samples[i]
+
+            ratio_x = random.uniform(0.9, 0.99)
+            ratio_y = random.uniform(0.9, 0.99)
+
+            data_change_ratio = Augmentation.change_hand_ratio(divided_samples, ratio_x, ratio_y)
+            data_change_ratio_final.append(data_change_ratio)
+
+        selected_change_samples = random.sample(filtered_data, min(data_change_ratio_number, len(filtered_data)))
+
+        for i in range(len(selected_change_samples)):
+            divided_samples = selected_change_samples[i]
+
+            ratio_x_negative = random.uniform(-0.99, -0.9)
+            ratio_y_negative = random.uniform(-0.99, -0.9)
+
+            data_change_ratio = Augmentation.change_hand_ratio(divided_samples, ratio_x_negative, ratio_y_negative)
+            data_change_ratio_final.append(data_change_ratio)   
+
+        change_data.extend(data_change_ratio_final)
+        change_labels.extend([str_label] * len(data_change_ratio_final))
+
+    # !
+    add_minor_data = []
+    add_minor_labels = []
+
+    for label in range(39):
+        str_label = str(label)
+        filtered_indices = [idx for idx, lbl in enumerate(data['labels']) if lbl == str_label]
+        filtered_data = [data['data'][idx] for idx in filtered_indices]
+
+        data_add_minor_number = 200
+
+        selected_add_minor_samples = random.sample(filtered_data, min(data_add_minor_number, len(filtered_data)))
+
+        data_add_minor_final = []
+
+        for i in range(len(selected_add_minor_samples)):
+            divided_samples = selected_add_minor_samples[i]
+
+            x_magnitude = 0.008
+            y_magnitude = 0.008
+            z_percentage = np.random.uniform(0.01, 0.03)
+
+            data_add_minor = Augmentation.add_minor_fluctuations(divided_samples, x_magnitude, y_magnitude, z_percentage)
+            data_add_minor_final.append(data_add_minor)
 
 
-augmentation_implementation(data_right_hand)
-right_hand_path = "D:\\[COCA]_ASL_recognition\\Model\\right_hand_data.pickle"  
-with open(right_hand_path, 'wb') as file:
-    pickle.dump(data_right_hand, file)
+        selected_add_minor_samples = random.sample(filtered_data, min(data_add_minor_number, len(filtered_data)))
+        
+        for i in range(len(selected_add_minor_samples)):
+            divided_samples = selected_add_minor_samples[i]
 
-augmentation_implementation(data_left_hand)
-left_hand_path = "D:\\[COCA]_ASL_recognition\\Model\\left_hand_data.pickle"  
-with open(left_hand_path, 'wb') as file:
-    pickle.dump(data_left_hand, file)
+            x_magnitude = 0.007
+            y_magnitude = 0.007
+            z_percentage = np.random.uniform(0.01, 0.03)
 
-print(len(data_right_hand['data']))
-label_counts = Counter(data_right_hand["labels"])
+            data_add_minor = Augmentation.add_minor_fluctuations(divided_samples, x_magnitude, y_magnitude, z_percentage)
+            data_add_minor_final.append(data_add_minor)
+
+        add_minor_data.extend(data_add_minor_final)
+        add_minor_labels.extend([str_label] * len(data_add_minor_final))
+    
+    data_test = {'data': [], 'labels': []}
+
+# Tiếp tục mở rộng data_test tương tự như bạn đã làm với data
+
+    data_test['data'].extend(raw_data)
+    data_test['labels'].extend(raw_labels)
+
+    data_test['data'].extend(rotate_data)
+    data_test['labels'].extend(rotate_labels)
+
+    data_test['data'].extend(change_data)
+    data_test['labels'].extend(change_labels)
+
+    data_test['data'].extend(add_minor_data)
+    data_test['labels'].extend(add_minor_labels)
+
+    return data_test
+
+
+right_hand_test_data = augmentation_implementation_create_testdata(data_right_hand_for_test)
+right_hand_test_path = "D:\\[COCA]_ASL_recognition\\Model\\right_hand_test_data.pickle"  
+with open(right_hand_test_path, 'wb') as file:
+    pickle.dump(right_hand_test_data, file)
+
+left_hand_test_data = augmentation_implementation_create_testdata(data_left_hand_for_test)
+left_hand_test_path = "D:\\[COCA]_ASL_recognition\\Model\\left_hand_test_data.pickle"  
+with open(left_hand_test_path, 'wb') as file:
+    pickle.dump(left_hand_test_data, file)
+
+print(len(right_hand_test_data['data']))
+label_counts = Counter(right_hand_test_data["labels"])
 sorted_labels = sorted(label_counts.items(), key=lambda x: x[0])
 print(sorted_labels)
+print()
 
-label_counts = Counter(data_left_hand["labels"])
+label_counts = Counter(left_hand_test_data["labels"])
 sorted_labels = sorted(label_counts.items(), key=lambda x: x[0])
 print(sorted_labels)
-
-
-
-
+print()
